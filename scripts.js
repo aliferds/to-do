@@ -1,24 +1,33 @@
 // file: scripts.js
 
 function toggleLightDarkMode() {
-  const lightElements = document.querySelectorAll(".light");
-  const modeToggle = document.getElementById("mode-toggle");
-  const body = document.body;
+    const lightElements = document.querySelectorAll(".light");
+    const modeToggle = document.getElementById("mode-toggle");
+    const body = document.body;
 
-  lightElements.forEach((element) => {
-    element.classList.toggle("dark");
-  });
+    lightElements.forEach((element) => {
+        element.classList.toggle("dark");
+    });
+    body.classList.toggle("dark");
 
-  if (modeToggle) {
-    modeToggle.classList.toggle("dark-mode");
-  }
+    if (modeToggle) {
+        modeToggle.classList.toggle("dark-mode");
+    }
 
+    // Atualiza o texto do botão
+    if (modeToggle) {
+        if (body.classList.contains("dark")) {
+            modeToggle.textContent = "Light Mode";
+        } else {
+            modeToggle.textContent = "Dark Mode";
+        }
+    }
 
-  if (body.classList.contains("dark")) {
-    localStorage.setItem("mode", "dark");
-  } else {
-    localStorage.setItem("mode", "light");
-  }
+    if (body.classList.contains("dark")) {
+        localStorage.setItem("mode", "dark");
+    } else {
+        localStorage.setItem("mode", "light");
+    }
 }
 
 function applySavedLightDarkMode() {
@@ -31,6 +40,7 @@ function applySavedLightDarkMode() {
         body.classList.add("dark");
         if (modeToggle) {
             modeToggle.classList.add("dark-mode");
+            modeToggle.textContent = "Light Mode"; // Define texto inicial
         }
         lightElements.forEach((element) => {
             if (!element.classList.contains("dark")) {
@@ -41,6 +51,7 @@ function applySavedLightDarkMode() {
         body.classList.remove("dark");
         if (modeToggle) {
             modeToggle.classList.remove("dark-mode");
+            modeToggle.textContent = "Dark Mode"; // Define texto inicial
         }
         lightElements.forEach((element) => {
             if (element.classList.contains("dark")) {
@@ -50,245 +61,133 @@ function applySavedLightDarkMode() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    applySavedLightDarkMode();
-
-    const toggleButton = document.getElementById("mode-toggle");
-    if (toggleButton) { 
-        toggleButton.addEventListener("click", toggleLightDarkMode);
-    }
-});
-
-// =============================================================================
-// Verify bellow code for futher usage
-// =============================================================================
-
-const Modal = {
-    open(){
-        document.querySelector(".modal-overlay").classList.toggle("active")
-    },
-    close(){
-        document.querySelector(".modal-overlay").classList.toggle("active")
-    }
-}
-
 const Storage = {
     get() {
-        return JSON.parse(localStorage.getItem("dev.finances:transactions")) || []
+        return JSON.parse(localStorage.getItem("to-do:tasklist")) || []
     },
-    set(transactions){
-        localStorage.setItem("dev.finances:transactions", JSON.stringify(transactions))
-    },
+    set(tasklist){
+        localStorage.setItem("to-do:tasklist", JSON.stringify(tasklist))
+    }
 }
 
-const Transaction = {
+const Task = {
     all: Storage.get(),
 
-    add(transaction) {
-        Transaction.all.push(transaction)
+    add(task) {
+        const newTask = {
+            description: task.description,
+            completed: false
+        };
+        Task.all.push(task)
 
         App.reload()
     },
     remove(index) {
-        Transaction.all.splice(index , 1)
+        Task.all.splice(index , 1)
 
         App.reload()
     },
-    incomes(){
-        let income = 0;
+    toggle(index) {
+        Task.all[index].completed = !Task.all[index].completed
 
-        Transaction.all.forEach((transaction) => {
-            if(transaction.amount > 0) {
-                income += transaction.amount;
-            }
-        })
-
-        return income;
-    },
-    expenses(){
-        let expense = 0;
-
-        Transaction.all.forEach((transaction) => {
-            if(transaction.amount < 0) {
-                expense += transaction.amount;
-            }
-        })
-
-        return expense;
-    },
-    total(){
-        return Transaction.incomes() + Transaction.expenses();
+        App.reload()
     }
 }
 
 const DOM = {
-    transactionsContainer: document.querySelector('#data-table'),
+    tasksContainer: document.querySelector('#task-table'),
 
-    addTransaction(transaction, index) {
-        const tr = document.createElement('tr')
-        tr.innerHTML = DOM.innerHTMLTransaction(transaction, index)
-        tr.dataset.index = index
+    addTask(task, index) {
+        const li = document.createElement('li');
+        li.classList.add('todo__item');
+        li.dataset.index = index; // Armazena o índice para fácil remoção/toggle
 
-        DOM.transactionsContainer.appendChild(tr)
+        li.innerHTML = DOM.taskHTML(task, index);
+
+        if (document.body.classList.contains('dark')) {
+            li.classList.add('dark');
+        }
+
+        if (task.completed) {
+            li.classList.add('completed');
+            li.querySelector('input[type="checkbox"]').checked = true;
+        }
+
+        DOM.tasksContainer.append(li);
     },
-    innerHTMLTransaction(transaction, index) {
-        const CSSclass = transaction.amount > 0 ? "income" : "expense"
 
-        const amount = Utils.formatCurrency(transaction.amount)
-
+    taskHTML(task, index) {
         const html = `
-            <td class="description">${transaction.description}</td>
-            <td class=${CSSclass}>${amount}</td>
-            <td class="date">${transaction.date}</td>
-            <td>
-                <a href="#">
-                    <img onclick="Transaction.remove(${index})" src="./assets/minus.svg" alt="remover Transação" >
-                </a>
-            </td>
-        `
-
-        return html
+            <div class="todo__itemContent">
+                <input type="checkbox" id="task-${index}" name="task-${index}" ${task.completed ? 'checked' : ''}>
+                <label for="task-${index}">${task.description}</label>
+                <button class="todo__itemDelete" data-index="${index}">X</button>
+            </div>
+        `;
+        return html;
     },
 
-    updateBalance() {
-        document
-            .getElementById("incomeDisplay")
-            .innerHTML = Utils.formatCurrency(Transaction.incomes())
-        document
-            .getElementById("expenseDisplay")
-            .innerHTML = Utils.formatCurrency(Transaction.expenses())
-        document
-            .getElementById("totalDisplay")
-            .innerHTML = Utils.formatCurrency(Transaction.total())
-    },
-
-    clearTransaction() {
-        DOM.transactionsContainer.innerHTML = ""
-    },
-}
-
-const Utils = {
-    formatAmount(value){
-        return Math.round(value * 100)
-    },
-    formatDate(date){
-        const splittedDate = date.split("-")
-        return `${splittedDate[2]}/${splittedDate[1]}/${splittedDate[0]}`
-    },
-    formatCurrency(value) {
-        const signal = Number(value) < 0 ? "-" : ""
-        // console.log(value + " chegou")
-        value = String(value).replace(/\D/g, "")
-        // console.log(value + " replace")
-
-        value = Number(value) / 100
-        // console.log(value + " Dividiu")
-
-        value = value.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        })
-
-        return signal + value
-    }
-}
-
-const Form = {
-    description: document.querySelector("input#description"),
-    amount: document.querySelector("input#amount"),
-    date: document.querySelector("input#date"),
-
-    getValues(){
-        return {
-            description: Form.description.value,
-            amount: Form.amount.value,
-            date: Form.date.value
-        }
-    },
-    clearFields(){
-        Form.description.value = ""
-        Form.amount.value = ""
-        Form.date.value = ""
-        Form.description.classList.remove('input-empty')
-        Form.date.classList.remove('input-empty')
-        Form.amount.classList.remove('input-empty')
-    },
-
-    submit(event){
-        event.preventDefault()
-        try{
-            Form.validateField()
-            const transaction = Form.formatData()
-            // console.log(transaction)
-
-            Transaction.add(transaction)
-
-            Form.close()
-        } catch (error) {
-            alert(error.message)
-        }
-        Form.formatData()
-    },
-    close(){
-        Form.clearFields()
-        Modal.close()
-    },
-    validateField() {
-        const {description, amount, date} = Form.getValues()
-        if( description.trim() === "") {
-            Form.description.classList.add('input-empty');
-        }
-        if( amount.trim() === "") {
-            Form.amount.classList.add('input-empty');
-        }
-        if( date.trim() === "") {
-            Form.date.classList.add('input-empty');
-        }
-        if( description.trim() === "" ||
-            amount.trim() === "" ||
-            date.trim() === "" ) {
-                throw new Error("Por favor, preencha todos os campos")
-        }
-    },
-    formatData(){
-        let { description, amount, date } = Form.getValues()
-
-        amount = Utils.formatAmount(amount)
-
-        date = Utils.formatDate(date)
-
-        return {
-            description,
-            amount,
-            date,
-        }
-
+    clearTasks() {
+        DOM.tasksContainer.innerHTML = "";
     },
 }
 
 const App = {
     init() {
-        Transaction.all.forEach(function(transaction, index) {
-            DOM.addTransaction(transaction, index)
-            // console.log(transaction)
+        DOM.clearTasks();
+        Task.all.forEach(function(task, index) {
+            DOM.addTask(task, index)
         })
-        
-        DOM.updateBalance()
 
-        Storage.set(Transaction.all)
-
-        if(Transaction.total() >= 0){
-            document.querySelector(".card.total").classList.remove('negative');
-            document.querySelector(".card.total").classList.add('positive');
-        } else if(Transaction.total() < 0){
-            document.querySelector(".card.total").classList.remove('positive');
-            document.querySelector(".card.total").classList.add('negative');
-        }
+        Storage.set(Task.all)
     },
     reload() {
-        DOM.clearTransaction()
         App.init()
     },
 }
 
-App.init()
+document.addEventListener("DOMContentLoaded", () => {
+    applySavedLightDarkMode();
+    const toggleButton = document.getElementById("mode-toggle");
+    if (toggleButton) {
+        toggleButton.addEventListener("click", toggleLightDarkMode);
+    }
+
+    const taskInput = document.getElementById('task-input');
+    const addIcon = document.querySelector('.todo__addIcon');
+
+    if (addIcon) {
+        addIcon.addEventListener('click', () => {
+            const description = taskInput.value.trim();
+            if (description) {
+                Task.add({ description: description });
+                taskInput.value = '';
+            }
+        });
+
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const description = taskInput.value.trim();
+                if (description) {
+                    Task.add({ description: description });
+                    taskInput.value = '';
+                }
+            }
+        });
+    }
+
+    DOM.tasksContainer.addEventListener('click', (event) => {
+        // Checa se o elemento clicado é um botão de exclusão de tarefa
+        if (event.target.classList.contains('todo__itemDelete')) {
+            const index = event.target.dataset.index;
+            Task.remove(index);
+        }
+        // Checa se o elemento clicado é uma checkbox de tarefa
+        else if (event.target.type === 'checkbox' && event.target.id.startsWith('task-')) {
+            const index = event.target.id.split('-')[1];
+            Task.toggle(index);
+        }
+    });
+
+    App.init();
+});

@@ -10,15 +10,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libertinus+Mono&display=swap" rel="stylesheet">
 </head>
-<body class="body light">
-  <header class="logo bg-light">
-    <h1 class="logo__title">To-do</h1>
+<body>
+  <header class="logo bg-light light">
+    <h1 class="logo__title light">To-do</h1>
     <p class="logo__subtitle light">Uma maneira simples e eficiente de manter sua lista de tarefas</p>
+    <button id="mode-toggle">Dark Mode</button>
   </header>
-  <main class="to-do"></main>
-  <footer class="footer bg-light">
+  <main class="todo light">
+    <div class="todo__form">
+      <div class="todo__addIcon">+</div>
+      <input 
+        class="todo__input" 
+        type="text" 
+        id="task-input"
+        placeholder="Digite uma nova tarefa">
+    </div>
+
+    <ul class="todo__list" id="task-table">
+    </ul>
+  </main>
+  <footer class="footer bg-light light">
     <p>Designed and developed by 
-      <a 
+      <a
         href="https://github.com/aliferds" 
         target="_blank" 
         rel="noopener noreferrer">
@@ -34,5 +47,6 @@
       </a>
     <p>Made with ❤️</p>
   </footer>
+  <script src="scripts.js"></script>
 </body>
 </html>
