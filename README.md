@@ -1,3 +1,3 @@
 # A simple to-do Web App
 
-[https://aliferds.github.io/to-do/](Ver a aplicação)
+[Clique aqui para ver a aplicação](https://aliferds.github.io/to-do/)
